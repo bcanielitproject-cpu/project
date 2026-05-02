@@ -9,13 +9,18 @@ function isStrongPassword(value) {
   return strongPasswordPattern.test(value);
 }
 
+function sanitizeAuthUser(user) {
+  return {
+    id: user._id,
+    phone: user.phone,
+    username: user.username || "",
+    role: user.role || "user"
+  };
+}
+
 function authResponse(user) {
   return {
-    user: {
-      id: user._id,
-      phone: user.phone,
-      username: user.username || ""
-    },
+    user: sanitizeAuthUser(user),
     token: signToken(user)
   };
 }
@@ -69,13 +74,31 @@ export async function login(req, res, next) {
   }
 }
 
+export async function loginAdmin(req, res, next) {
+  try {
+    const { phone, password } = req.body;
+
+    if (!phone || !password) {
+      return res.status(400).json({ message: "Phone and password are required" });
+    }
+
+    const user = await User.findOne({ phone }).select("+password");
+    const isAdmin = user?.role === "admin";
+    const isValidPassword = user ? await user.comparePassword(password) : false;
+
+    if (!isAdmin || !isValidPassword) {
+      return res.status(401).json({ message: "Invalid admin phone or password" });
+    }
+
+    res.json(authResponse(user));
+  } catch (error) {
+    next(error);
+  }
+}
+
 export function me(req, res) {
   res.json({
-    user: {
-      id: req.user._id,
-      phone: req.user.phone,
-      username: req.user.username || ""
-    }
+    user: sanitizeAuthUser(req.user)
   });
 }
 

@@ -1,6 +1,7 @@
 import express from "express";
 import {
   changePassword,
+  loginAdmin,
   login,
   me,
   register,
@@ -12,6 +13,7 @@ const router = express.Router();
 
 router.post("/register", register);
 router.post("/login", login);
+router.post("/admin/login", loginAdmin);
 router.get("/me", protect, me);
 router.patch("/profile", protect, updateProfile);
 router.patch("/password", protect, changePassword);

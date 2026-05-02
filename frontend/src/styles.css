@@ -1,9 +1,12 @@
-@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Sora:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Cinzel:wght@500;600;700;800&family=Great+Vibes&display=swap");
 
 :root {
-  --font-ui: "Sora", "Segoe UI", "Trebuchet MS", sans-serif;
-  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-ui: "Manrope", "Segoe UI", "Trebuchet MS", sans-serif;
+  --font-display: "Cinzel", Georgia, serif;
+  --font-script: "Great Vibes", cursive;
   --bg-photo: url("https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=2200&q=80");
+  --auth-bg-photo: url("https://res.cloudinary.com/dzskuvtfn/image/upload/v1777737480/nagaland_hero_1920x1080_zhqxps.png");
+  --auth-bg-position: center center;
   --text: #f7fbff;
   --muted: #d8e2ea;
   --small: #c6d1da;
@@ -201,11 +204,37 @@ fieldset:disabled {
 }
 
 .auth-page {
-  min-height: 100vh;
-  padding: 26px;
-  display: grid;
-  grid-template-columns: minmax(0, 1.06fr) minmax(360px, 0.94fr);
-  gap: 24px;
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+  padding: 28px;
+  display: block;
+}
+
+.auth-page::before,
+.auth-page::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.auth-page::before {
+  z-index: -2;
+  background-image: var(--auth-bg-photo);
+  background-size: cover;
+  background-position: var(--auth-bg-position);
+  background-repeat: no-repeat;
+}
+
+.auth-page::after {
+  z-index: -1;
+  background: linear-gradient(145deg, rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0.2));
+}
+
+.auth-page > * {
+  position: relative;
+  z-index: 1;
 }
 
 .auth-visual,
@@ -231,40 +260,51 @@ fieldset:disabled {
 }
 
 .auth-visual {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 10px;
+  right: 10px;
+  transform: none;
   overflow: hidden;
-  border-radius: 26px;
-  padding: clamp(24px, 5vw, 64px);
-  min-height: calc(100vh - 52px);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  background:
-    linear-gradient(150deg, rgba(7, 18, 29, 0.82), rgba(7, 18, 29, 0.3)),
-    var(--bg-photo) center / cover no-repeat;
+  width: auto;
+  border-radius: 24px;
+  padding: 14px 22px;
+  min-height: 132px;
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: 8px;
+  justify-items: center;
+  align-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px) saturate(1.1);
+  z-index: 2;
 }
 
 .auth-visual::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(140deg, rgba(19, 46, 66, 0.34), rgba(255, 167, 95, 0.08));
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.02));
   pointer-events: none;
 }
 
 .brand-mark {
   position: relative;
   z-index: 1;
-  width: 68px;
-  height: 68px;
-  border-radius: 18px;
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
   display: grid;
   place-items: center;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: #fff9f5;
-  background: linear-gradient(135deg, var(--accent), #dc6d50);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.3);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
 }
 
 .brand-mark.small {
@@ -277,24 +317,94 @@ fieldset:disabled {
 .auth-copy {
   position: relative;
   z-index: 1;
-  max-width: 640px;
+  width: 100%;
+  max-width: 980px;
   display: grid;
-  gap: 14px;
+  gap: 6px;
+  text-align: center;
+  justify-items: center;
 }
 
 .auth-copy h1 {
-  font-size: clamp(2.4rem, 4.8vw, 4.8rem);
-  line-height: 0.95;
+  font-size: clamp(1.1rem, 2vw, 1.9rem);
+  line-height: 1.04;
+  letter-spacing: 0.01em;
+  color: #ffffff;
+  text-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
 }
 
 .auth-copy p {
-  max-width: 56ch;
+  max-width: 58ch;
+}
+
+.auth-kicker {
+  color: #edf4fa;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.auth-subcopy {
+  color: #edf3f8;
+  font-size: 0.88rem;
+  max-width: 70ch;
+}
+
+.auth-title-accent {
+  display: inline-block;
+  margin: 0 6px;
+  font-family: var(--font-script);
+  font-size: 1.2em;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: #ffffff;
+  text-shadow: 0 8px 20px rgba(0, 0, 0, 0.34);
+}
+
+.auth-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.auth-highlights span {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.08);
+  color: #eef5fb;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.auth-utility {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1120px;
+  gap: 12px;
 }
 
 .auth-panel-wrap {
-  min-height: calc(100vh - 52px);
-  display: grid;
-  place-items: center;
+  position: absolute;
+  top: 66%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(520px, calc(100% - 56px));
+  min-height: auto;
+  display: block;
+  z-index: 2;
 }
 
 .auth-card,
@@ -304,9 +414,37 @@ fieldset:disabled {
   padding: clamp(22px, 4vw, 36px);
 }
 
+.auth-card {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow:
+    0 24px 54px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42);
+}
+
+.auth-card input,
+.auth-card select {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #f7fbff;
+}
+
+.auth-card .segmented {
+  border-color: rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.auth-card .segmented .active {
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
 .segmented {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   padding: 7px;
   border-radius: 14px;
@@ -625,6 +763,11 @@ fieldset:disabled {
 
 .topbar-search {
   width: min(560px, 100%);
+}
+
+.admin-top-note {
+  color: var(--muted);
+  font-size: 0.92rem;
 }
 
 .topbar-search input {
@@ -1077,6 +1220,41 @@ fieldset:disabled {
   gap: 18px;
 }
 
+.admin-layout {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-forms .pro-panel {
+  width: 100%;
+}
+
+.admin-list-panel {
+  min-height: 340px;
+}
+
+.admin-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-item-content {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-item-content img {
+  width: 62px;
+  height: 62px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
 .stay-layout {
   grid-template-columns: minmax(340px, 0.9fr) minmax(0, 1.1fr);
   gap: 14px;
@@ -1397,6 +1575,10 @@ fieldset:disabled {
 }
 
 @media (max-width: 1020px) {
+  :root {
+    --auth-bg-position: center top;
+  }
+
   .auth-page,
   .app-shell,
   .app-shell.sidebar-collapsed,
@@ -1406,8 +1588,10 @@ fieldset:disabled {
   }
 
   .auth-page {
+    display: grid;
+    min-height: 100dvh;
     padding: 16px;
-    gap: 16px;
+    gap: 12px;
   }
 
   .auth-visual,
@@ -1416,7 +1600,23 @@ fieldset:disabled {
   }
 
   .auth-visual {
-    min-height: 50vh;
+    position: static;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: 100%;
+    min-height: 190px;
+  }
+
+  .auth-panel-wrap {
+    position: static;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: 100%;
+    display: grid;
+    place-items: center;
+    padding-bottom: 12px;
   }
 
   .app-shell {
@@ -1486,6 +1686,10 @@ fieldset:disabled {
   }
 
   .cards {
+    grid-template-columns: 1fr;
+  }
+
+  .segmented {
     grid-template-columns: 1fr;
   }
 

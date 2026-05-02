@@ -613,6 +613,21 @@ const nagalandTopRestaurants = [
   }
 ];
 const taxiChoices = ["bike", "four-seater", "six-seater", "custom"];
+const emptyAdminHotel = {
+  name: "",
+  type: "hotel",
+  description: "",
+  imageUrl: "",
+  location: "",
+  pricePerNight: ""
+};
+const emptyAdminPlace = {
+  name: "",
+  description: "",
+  imageUrl: "",
+  district: "",
+  address: ""
+};
 const featuredPlaceRoutes = [
   {
     id: "phek-classic",
@@ -664,7 +679,15 @@ function getDefaultBookingDates() {
 function getStoredUser() {
   try {
     const stored = localStorage.getItem("nagaland_user");
-    return stored ? JSON.parse(stored) : null;
+    if (!stored) return null;
+
+    const parsed = JSON.parse(stored);
+    if (!parsed || typeof parsed !== "object") return null;
+
+    return {
+      ...parsed,
+      role: parsed.role || "user"
+    };
   } catch {
     localStorage.removeItem("nagaland_user");
     localStorage.removeItem("nagaland_token");
@@ -694,13 +717,21 @@ function buildItineraryId(place) {
   return `${base}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function sortByName(records) {
+  return [...records].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+}
+
 function App() {
   const defaultDates = getDefaultBookingDates();
   const [theme, setTheme] = useState(getStoredTheme);
   const [authMode, setAuthMode] = useState("login");
   const [authForm, setAuthForm] = useState(emptyAuth);
   const [user, setUser] = useState(getStoredUser);
-  const [page, setPage] = useState(() => (getStoredUser() ? "dashboard" : "auth"));
+  const [page, setPage] = useState(() => {
+    const storedUser = getStoredUser();
+    if (!storedUser) return "auth";
+    return storedUser.role === "admin" ? "admin" : "dashboard";
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dashboardSearch, setDashboardSearch] = useState("");
   const [placeQuery, setPlaceQuery] = useState("");
@@ -737,10 +768,29 @@ function App() {
     newPassword: ""
   });
   const [reviewForms, setReviewForms] = useState({});
+  const [adminHotelForm, setAdminHotelForm] = useState(emptyAdminHotel);
+  const [adminPlaceForm, setAdminPlaceForm] = useState(emptyAdminPlace);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
 
   const isLoggedIn = Boolean(user);
+  const isAdmin = user?.role === "admin";
+  const navItems = isAdmin
+    ? [
+        ["admin", "AD", "Admin Control"],
+        ["profile", "PR", "Profile"]
+      ]
+    : [
+        ["dashboard", "EX", "Explore"],
+        ["places", "DS", "Destinations"],
+        ["saved", "SV", "Saved list"],
+        ["taxi", "TR", "Transport"],
+        ["stays", "ST", "Stay"],
+        ["restaurants", "FD", "Eat & Drink"],
+        ["itinerary", "IT", "Itinerary"],
+        ["history", "BK", "Bookings"],
+        ["profile", "PR", "Profile"]
+      ];
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -777,9 +827,9 @@ function App() {
             ? restaurantData.value
             : [];
 
-        setPlaces(safePlaces);
-        setHotels(safeHotels);
-        setRestaurants(safeRestaurants);
+        setPlaces(sortByName(safePlaces));
+        setHotels(sortByName(safeHotels));
+        setRestaurants(sortByName(safeRestaurants));
         setHotelForm((current) => ({
           ...current,
           hotelId: safeHotels[0]?._id || ""
@@ -799,7 +849,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || isAdmin) return;
 
     async function loadBookings() {
       const [taxiData, stayData] = await Promise.allSettled([
@@ -814,7 +864,7 @@ function App() {
     }
 
     loadBookings();
-  }, [isLoggedIn, message]);
+  }, [isLoggedIn, isAdmin, message]);
 
   const averageRatings = useMemo(() => {
     return restaurants.reduce((ratings, restaurant) => {
@@ -830,7 +880,8 @@ function App() {
     setMessage("");
 
     try {
-      const data = await apiRequest(`/auth/${authMode}`, {
+      const authPath = authMode === "admin" ? "/auth/admin/login" : `/auth/${authMode}`;
+      const data = await apiRequest(authPath, {
         method: "POST",
         body: JSON.stringify(authForm)
       });
@@ -841,8 +892,13 @@ function App() {
       setProfileForm({ username: data.user.username || "" });
       setAuthForm(emptyAuth);
       setTaxiForm((current) => ({ ...current, phone: data.user.phone }));
-      setPage("dashboard");
-      setMessage(authMode === "login" ? "Logged in successfully." : "Account created.");
+      const nextPage = data.user?.role === "admin" ? "admin" : "dashboard";
+      setPage(nextPage);
+      if (authMode === "admin") {
+        setMessage("Admin signed in successfully.");
+      } else {
+        setMessage(authMode === "login" ? "Logged in successfully." : "Account created.");
+      }
     } catch (error) {
       setMessage(error.message);
     }
@@ -861,7 +917,8 @@ function App() {
   }
 
   function goToPage(target) {
-    setPage(target);
+    const nextPage = isAdmin && target !== "admin" && target !== "profile" ? "admin" : target;
+    setPage(nextPage);
     if (isPhoneViewport()) {
       setSidebarOpen(false);
     }
@@ -1054,17 +1111,138 @@ function App() {
     }
   }
 
+  async function submitAdminHotel(event) {
+    event.preventDefault();
+    setMessage("");
+
+    const parsedPrice = Number(adminHotelForm.pricePerNight);
+    if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
+      setMessage("Please enter a valid non-negative hotel price.");
+      return;
+    }
+
+    try {
+      const payload = {
+        name: adminHotelForm.name.trim(),
+        type: adminHotelForm.type,
+        description: adminHotelForm.description.trim(),
+        location: adminHotelForm.location.trim(),
+        pricePerNight: parsedPrice,
+        images: adminHotelForm.imageUrl.trim() ? [adminHotelForm.imageUrl.trim()] : []
+      };
+
+      const createdHotel = await apiRequest("/hotels", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+
+      setHotels((current) => sortByName([...current, createdHotel]));
+      setHotelForm((current) => ({
+        ...current,
+        hotelId: current.hotelId || createdHotel._id
+      }));
+      setAdminHotelForm(emptyAdminHotel);
+      setMessage(`${createdHotel.name} added to hotels.`);
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
+  async function submitAdminPlace(event) {
+    event.preventDefault();
+    setMessage("");
+
+    if (!adminPlaceForm.imageUrl.trim()) {
+      setMessage("Please enter an image URL for the place.");
+      return;
+    }
+
+    try {
+      const payload = {
+        name: adminPlaceForm.name.trim(),
+        description: adminPlaceForm.description.trim(),
+        images: [adminPlaceForm.imageUrl.trim()],
+        location: {
+          district: adminPlaceForm.district.trim(),
+          address: adminPlaceForm.address.trim()
+        }
+      };
+
+      const createdPlace = await apiRequest("/places", {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+
+      setPlaces((current) => sortByName([...current, createdPlace]));
+      setAdminPlaceForm(emptyAdminPlace);
+      setMessage(`${createdPlace.name} added to places.`);
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
+  async function deleteAdminHotel(hotelId) {
+    setMessage("");
+
+    try {
+      await apiRequest(`/hotels/${hotelId}`, { method: "DELETE" });
+      setHotels((current) => {
+        const remaining = current.filter((hotel) => hotel._id !== hotelId);
+        setHotelForm((currentHotelForm) => ({
+          ...currentHotelForm,
+          hotelId:
+            currentHotelForm.hotelId === hotelId
+              ? remaining[0]?._id || ""
+              : currentHotelForm.hotelId
+        }));
+        return remaining;
+      });
+      setMessage("Hotel or homestay deleted.");
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
+  async function deleteAdminPlace(placeId) {
+    setMessage("");
+
+    try {
+      await apiRequest(`/places/${placeId}`, { method: "DELETE" });
+      setPlaces((current) => current.filter((place) => place._id !== placeId));
+      setWishlist((current) => current.filter((place) => place._id !== placeId));
+      setItinerary((current) => current.filter((place) => place._id !== placeId));
+      if (selectedPlace?._id === placeId) {
+        setSelectedPlace(null);
+      }
+      setMessage("Tourist place deleted.");
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
   if (!isLoggedIn) {
     return (
       <main className="auth-page">
         <section className="auth-visual">
-          <div className="brand-mark">NT</div>
-          <button className="theme-toggle floating" type="button" onClick={toggleTheme}>
-            {theme === "dark" ? "Light mode" : "Dark mode"}
-          </button>
+          <div className="auth-utility">
+            <div className="brand-mark">NT</div>
+            <button className="theme-toggle floating" type="button" onClick={toggleTheme}>
+              {theme === "dark" ? "Light mode" : "Dark mode"}
+            </button>
+          </div>
           <div className="auth-copy">
-            <p>Nagaland Tourism</p>
-            <h1>Begin your hill journey with one secure phone login.</h1>
+            <p className="auth-kicker">Nagaland Tourism Platform</p>
+            <h1>
+              Discover the <span className="auth-title-accent">vibrant beauty</span> of Nagaland.
+            </h1>
+            <p className="auth-subcopy">
+              Secure login, reliable booking workflows, and admin-level control in one clean portal.
+            </p>
+            <div className="auth-highlights">
+              <span>Secure sign-in</span>
+              <span>Unified bookings</span>
+              <span>Admin controls</span>
+            </div>
           </div>
         </section>
 
@@ -1072,7 +1250,13 @@ function App() {
           <form className="auth-card form" onSubmit={handleAuth}>
             <div>
               <p className="eyebrow">Welcome</p>
-              <h2>{authMode === "login" ? "Sign in" : "Create account"}</h2>
+              <h2>
+                {authMode === "login"
+                  ? "Sign in"
+                  : authMode === "register"
+                    ? "Create account"
+                    : "Admin sign in"}
+              </h2>
             </div>
             <div className="segmented">
               <button
@@ -1088,6 +1272,13 @@ function App() {
                 onClick={() => setAuthMode("register")}
               >
                 Register
+              </button>
+              <button
+                type="button"
+                className={authMode === "admin" ? "active" : ""}
+                onClick={() => setAuthMode("admin")}
+              >
+                Admin
               </button>
             </div>
             <label>
@@ -1105,7 +1296,7 @@ function App() {
                 value={authForm.password}
                 onChange={(event) => setAuthForm({ ...authForm, password: event.target.value })}
                 type="password"
-                minLength={authMode === "register" ? 8 : undefined}
+                minLength={authMode === "register" || authMode === "admin" ? 8 : undefined}
                 pattern={authMode === "register" ? "(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}" : undefined}
                 title={
                   authMode === "register"
@@ -1120,8 +1311,15 @@ function App() {
                 Password must be at least 8 characters and include one number and one special character.
               </p>
             )}
+            {authMode === "admin" && (
+              <p className="muted">Admin login is restricted to users with admin role.</p>
+            )}
             <button className="primary-action">
-              {authMode === "login" ? "Sign in" : "Create account"}
+              {authMode === "login"
+                ? "Sign in"
+                : authMode === "register"
+                  ? "Create account"
+                  : "Admin sign in"}
             </button>
             {message && <p className="inline-notice">{message}</p>}
           </form>
@@ -1151,17 +1349,7 @@ function App() {
           {theme === "dark" ? "Light mode" : "Dark mode"}
         </button>
         <nav className="side-nav">
-          {[
-            ["dashboard", "EX", "Explore"],
-            ["places", "DS", "Destinations"],
-            ["saved", "SV", "Saved list"],
-            ["taxi", "TR", "Transport"],
-            ["stays", "ST", "Stay"],
-            ["restaurants", "FD", "Eat & Drink"],
-            ["itinerary", "IT", "Itinerary"],
-            ["history", "BK", "Bookings"],
-            ["profile", "PR", "Profile"]
-          ].map(([key, iconCode, label]) => (
+          {navItems.map(([key, iconCode, label]) => (
             <button
               type="button"
               key={key}
@@ -1174,8 +1362,10 @@ function App() {
           ))}
         </nav>
         <div className="sidebar-note">
-          <p>Nature. Culture. Heritage.</p>
-          <small>Unexplored routes across Nagaland hills.</small>
+          <p>{isAdmin ? "Admin control center" : "Nature. Culture. Heritage."}</p>
+          <small>
+            {isAdmin ? "Manage hotels and places across the website." : "Unexplored routes across Nagaland hills."}
+          </small>
         </div>
         <div className="helpline-card">
           <p className="eyebrow">Emergency helpline</p>
@@ -1205,23 +1395,29 @@ function App() {
             >
               {sidebarOpen ? "Hide" : "Menu"}
             </button>
-            <label className="topbar-search">
-              <input
-                value={dashboardSearch}
-                onChange={(event) => setDashboardSearch(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter") return;
-                  const query = dashboardSearch.trim();
-                  if (!query) return;
-                  setPlaceQuery(query);
-                  setPage("places");
-                }}
-                placeholder="Search places, experiences, hotels..."
-              />
-            </label>
+            {isAdmin ? (
+              <p className="admin-top-note">
+                Add or delete hotels and places to control website listings.
+              </p>
+            ) : (
+              <label className="topbar-search">
+                <input
+                  value={dashboardSearch}
+                  onChange={(event) => setDashboardSearch(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter") return;
+                    const query = dashboardSearch.trim();
+                    if (!query) return;
+                    setPlaceQuery(query);
+                    setPage("places");
+                  }}
+                  placeholder="Search places, experiences, hotels..."
+                />
+              </label>
+            )}
           </div>
           <div className="topbar-meta">
-            <span className="weather-pill">23 C Kohima</span>
+            <span className="weather-pill">{isAdmin ? "Admin mode" : "23 C Kohima"}</span>
             <span className="meta-chip">{pageTitle(page)}</span>
             <span className="meta-user">{user.username || user.phone}</span>
           </div>
@@ -1229,7 +1425,21 @@ function App() {
         {message && <p className="toast">{message}</p>}
 
         <section className="page-stage" key={page}>
-          {page === "dashboard" && (
+          {isAdmin && page === "admin" && (
+            <AdminPage
+              hotels={hotels}
+              places={places}
+              adminHotelForm={adminHotelForm}
+              setAdminHotelForm={setAdminHotelForm}
+              adminPlaceForm={adminPlaceForm}
+              setAdminPlaceForm={setAdminPlaceForm}
+              submitAdminHotel={submitAdminHotel}
+              submitAdminPlace={submitAdminPlace}
+              deleteAdminHotel={deleteAdminHotel}
+              deleteAdminPlace={deleteAdminPlace}
+            />
+          )}
+          {!isAdmin && page === "dashboard" && (
             <Dashboard
               places={places}
               restaurants={restaurants}
@@ -1239,7 +1449,7 @@ function App() {
               onSelectPlace={setSelectedPlace}
             />
           )}
-          {page === "places" && (
+          {!isAdmin && page === "places" && (
             <PlacesPage
               places={places}
               loading={loading}
@@ -1254,7 +1464,7 @@ function App() {
               addToItinerary={addToItinerary}
             />
           )}
-          {page === "saved" && (
+          {!isAdmin && page === "saved" && (
             <SavedPage
               wishlist={wishlist}
               onSelectPlace={setSelectedPlace}
@@ -1264,14 +1474,14 @@ function App() {
               setPage={goToPage}
             />
           )}
-          {page === "taxi" && (
+          {!isAdmin && page === "taxi" && (
             <TaxiPage
               taxiForm={taxiForm}
               setTaxiForm={setTaxiForm}
               submitTaxiBooking={submitTaxiBooking}
             />
           )}
-          {page === "stays" && (
+          {!isAdmin && page === "stays" && (
             <StaysPage
               hotels={hotels}
               stayQuery={stayQuery}
@@ -1282,7 +1492,7 @@ function App() {
               hasBookableHotels={hotels.length > 0}
             />
           )}
-          {page === "restaurants" && (
+          {!isAdmin && page === "restaurants" && (
             <RestaurantsPage
               restaurants={restaurants}
               averageRatings={averageRatings}
@@ -1296,20 +1506,20 @@ function App() {
               setRestaurantSort={setRestaurantSort}
             />
           )}
-          {page === "itinerary" && (
+          {!isAdmin && page === "itinerary" && (
             <ItineraryPage
               itinerary={itinerary}
               setItinerary={setItinerary}
               onBookRide={bookRideToPlace}
             />
           )}
-      {page === "history" && (
-        <BookingHistoryPage
-          bookingHistory={bookingHistory}
-          cancelTaxiBooking={cancelTaxiBooking}
-          cancelStayBooking={cancelStayBooking}
-        />
-      )}
+          {!isAdmin && page === "history" && (
+            <BookingHistoryPage
+              bookingHistory={bookingHistory}
+              cancelTaxiBooking={cancelTaxiBooking}
+              cancelStayBooking={cancelStayBooking}
+            />
+          )}
           {page === "profile" && (
             <ProfilePage
               user={user}
@@ -1324,7 +1534,7 @@ function App() {
         </section>
       </section>
 
-      {selectedPlace && (
+      {!isAdmin && selectedPlace && (
         <PlaceModal
           place={selectedPlace}
           onClose={() => setSelectedPlace(null)}
@@ -1338,8 +1548,242 @@ function App() {
   );
 }
 
+function AdminPage({
+  hotels,
+  places,
+  adminHotelForm,
+  setAdminHotelForm,
+  adminPlaceForm,
+  setAdminPlaceForm,
+  submitAdminHotel,
+  submitAdminPlace,
+  deleteAdminHotel,
+  deleteAdminPlace
+}) {
+  const sortedHotels = sortByName(hotels);
+  const sortedPlaces = sortByName(places);
+
+  return (
+    <div className="admin-layout">
+      <section className="split-layout admin-forms">
+        <form className="pro-panel form" onSubmit={submitAdminHotel}>
+          <div>
+            <p className="eyebrow">Admin action</p>
+            <h2>Add hotel or homestay</h2>
+          </div>
+          <label>
+            Name
+            <input
+              value={adminHotelForm.name}
+              onChange={(event) =>
+                setAdminHotelForm({ ...adminHotelForm, name: event.target.value })
+              }
+              placeholder="Hotel name"
+              required
+            />
+          </label>
+          <label>
+            Type
+            <select
+              value={adminHotelForm.type}
+              onChange={(event) =>
+                setAdminHotelForm({ ...adminHotelForm, type: event.target.value })
+              }
+            >
+              <option value="hotel">Hotel</option>
+              <option value="homestay">Homestay</option>
+            </select>
+          </label>
+          <label>
+            Location
+            <input
+              value={adminHotelForm.location}
+              onChange={(event) =>
+                setAdminHotelForm({ ...adminHotelForm, location: event.target.value })
+              }
+              placeholder="District or town"
+              required
+            />
+          </label>
+          <label>
+            Price per night
+            <input
+              type="number"
+              min="0"
+              value={adminHotelForm.pricePerNight}
+              onChange={(event) =>
+                setAdminHotelForm({ ...adminHotelForm, pricePerNight: event.target.value })
+              }
+              placeholder="2500"
+              required
+            />
+          </label>
+          <label>
+            Image URL (optional)
+            <input
+              value={adminHotelForm.imageUrl}
+              onChange={(event) =>
+                setAdminHotelForm({ ...adminHotelForm, imageUrl: event.target.value })
+              }
+              placeholder="https://example.com/image.jpg"
+            />
+          </label>
+          <label>
+            Description
+            <input
+              value={adminHotelForm.description}
+              onChange={(event) =>
+                setAdminHotelForm({ ...adminHotelForm, description: event.target.value })
+              }
+              placeholder="Short hotel description"
+              required
+            />
+          </label>
+          <button className="primary-action">Add hotel</button>
+        </form>
+
+        <form className="pro-panel form" onSubmit={submitAdminPlace}>
+          <div>
+            <p className="eyebrow">Admin action</p>
+            <h2>Add tourist place</h2>
+          </div>
+          <label>
+            Name
+            <input
+              value={adminPlaceForm.name}
+              onChange={(event) =>
+                setAdminPlaceForm({ ...adminPlaceForm, name: event.target.value })
+              }
+              placeholder="Place name"
+              required
+            />
+          </label>
+          <label>
+            District
+            <input
+              value={adminPlaceForm.district}
+              onChange={(event) =>
+                setAdminPlaceForm({ ...adminPlaceForm, district: event.target.value })
+              }
+              placeholder="Kohima"
+              required
+            />
+          </label>
+          <label>
+            Address
+            <input
+              value={adminPlaceForm.address}
+              onChange={(event) =>
+                setAdminPlaceForm({ ...adminPlaceForm, address: event.target.value })
+              }
+              placeholder="Full place address"
+              required
+            />
+          </label>
+          <label>
+            Image URL
+            <input
+              value={adminPlaceForm.imageUrl}
+              onChange={(event) =>
+                setAdminPlaceForm({ ...adminPlaceForm, imageUrl: event.target.value })
+              }
+              placeholder="https://example.com/place.jpg"
+              required
+            />
+          </label>
+          <label>
+            Description
+            <input
+              value={adminPlaceForm.description}
+              onChange={(event) =>
+                setAdminPlaceForm({ ...adminPlaceForm, description: event.target.value })
+              }
+              placeholder="Short place description"
+              required
+            />
+          </label>
+          <button className="primary-action">Add place</button>
+        </form>
+      </section>
+
+      <section className="split-layout">
+        <article className="top-list-panel admin-list-panel">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Website stays</p>
+              <h2>Manage hotels</h2>
+            </div>
+            <span className="pill">{sortedHotels.length} total</span>
+          </div>
+          <div className="rank-list">
+            {sortedHotels.length ? (
+              sortedHotels.map((hotel) => (
+                <article className="history-item admin-item" key={hotel._id}>
+                  <div className="admin-item-content">
+                    <img src={getHotelImage(hotel)} alt={hotel.name} />
+                    <div>
+                      <strong>{hotel.name}</strong>
+                      <p>{hotel.type} - {hotel.location}</p>
+                      <small>Rs {hotel.pricePerNight} per night</small>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="soft-action danger-action"
+                    onClick={() => deleteAdminHotel(hotel._id)}
+                  >
+                    Delete
+                  </button>
+                </article>
+              ))
+            ) : (
+              <p className="muted">No hotels found in the database.</p>
+            )}
+          </div>
+        </article>
+
+        <article className="top-list-panel admin-list-panel">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Website destinations</p>
+              <h2>Manage places</h2>
+            </div>
+            <span className="pill">{sortedPlaces.length} total</span>
+          </div>
+          <div className="rank-list">
+            {sortedPlaces.length ? (
+              sortedPlaces.map((place) => (
+                <article className="history-item admin-item" key={place._id}>
+                  <div className="admin-item-content">
+                    <img src={getPlaceImage(place)} alt={place.name} />
+                    <div>
+                      <strong>{place.name}</strong>
+                      <p>{place.location?.district || "Nagaland"}</p>
+                      <small>{place.location?.address || "Address unavailable"}</small>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="soft-action danger-action"
+                    onClick={() => deleteAdminPlace(place._id)}
+                  >
+                    Delete
+                  </button>
+                </article>
+              ))
+            ) : (
+              <p className="muted">No places found in the database.</p>
+            )}
+          </div>
+        </article>
+      </section>
+    </div>
+  );
+}
+
 function pageTitle(page) {
   const titles = {
+    admin: "Admin Control Center",
     dashboard: "Travel Command Center",
     places: "Tourist Places",
     saved: "Saved Places",

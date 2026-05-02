@@ -10,6 +10,54 @@ export async function getHotels(req, res, next) {
   }
 }
 
+export async function createHotel(req, res, next) {
+  try {
+    const { name, type = "hotel", description, images = [], location, pricePerNight } = req.body;
+
+    if (!name || !description || !location || pricePerNight === undefined) {
+      return res.status(400).json({
+        message: "Name, description, location, and price per night are required"
+      });
+    }
+
+    const parsedPrice = Number(pricePerNight);
+    if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
+      return res.status(400).json({ message: "Price per night must be a valid non-negative number" });
+    }
+
+    const normalizedImages = Array.isArray(images)
+      ? images.filter((image) => typeof image === "string" && image.trim())
+      : [];
+
+    const hotel = await Hotel.create({
+      name: String(name).trim(),
+      type,
+      description: String(description).trim(),
+      images: normalizedImages,
+      location: String(location).trim(),
+      pricePerNight: parsedPrice
+    });
+
+    res.status(201).json(hotel);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function deleteHotel(req, res, next) {
+  try {
+    const hotel = await Hotel.findByIdAndDelete(req.params.id);
+
+    if (!hotel) {
+      return res.status(404).json({ message: "Hotel or homestay not found" });
+    }
+
+    res.json({ message: "Hotel or homestay deleted" });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function bookHotel(req, res, next) {
   try {
     const { hotelId, bookingChoice, checkIn, checkOut } = req.body;
