@@ -1381,7 +1381,6 @@ function Dashboard({
   const [plannerTab, setPlannerTab] = useState("stay");
   const plannerTabs = [
     ["stay", "Stay", "stays"],
-    ["flight", "Flight", "places"],
     ["transport", "Transport", "taxi"],
     ["experience", "Experience", "itinerary"]
   ];
