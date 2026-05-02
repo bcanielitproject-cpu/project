@@ -63,6 +63,7 @@ body {
   color: var(--text);
   font-family: var(--font-ui);
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
 body::before,
@@ -1421,16 +1422,43 @@ fieldset:disabled {
   .app-shell {
     padding: 14px;
     gap: 14px;
+    position: relative;
   }
 
   .sidebar {
-    position: static;
-    height: auto;
-    min-height: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: min(86vw, 330px);
+    height: 100dvh;
+    min-height: 100dvh;
+    border-radius: 0 18px 18px 0;
+    z-index: 40;
+    transform: translateX(0);
+    transition: transform 220ms ease, opacity 220ms ease;
+  }
+
+  .app-shell::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 10, 16, 0.5);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 220ms ease;
+    z-index: 30;
+  }
+
+  .app-shell:not(.sidebar-collapsed)::after {
+    opacity: 1;
   }
 
   .sidebar-collapsed .sidebar {
-    display: none;
+    display: flex;
+    transform: translateX(-108%);
+    opacity: 0;
+    pointer-events: none;
   }
 
   .topbar {
@@ -1483,7 +1511,7 @@ fieldset:disabled {
   .horizontal-card img,
   .restaurant img,
   .place-modal > img {
-    min-height: 210px;
+    min-height: 170px;
   }
 
   .review-form {
@@ -1502,6 +1530,10 @@ fieldset:disabled {
   .card-action,
   .mini-action {
     width: 100%;
+  }
+
+  .topbar .sidebar-toggle {
+    width: auto;
   }
 }
 

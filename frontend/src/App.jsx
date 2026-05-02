@@ -685,6 +685,10 @@ function getStoredJson(key, fallback) {
   }
 }
 
+function isPhoneViewport() {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 1020px)").matches;
+}
+
 function buildItineraryId(place) {
   const base = place?._id || normalizeName(place?.name) || "stop";
   return `${base}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -858,6 +862,9 @@ function App() {
 
   function goToPage(target) {
     setPage(target);
+    if (isPhoneViewport()) {
+      setSidebarOpen(false);
+    }
   }
 
   function toggleWishlist(place) {
