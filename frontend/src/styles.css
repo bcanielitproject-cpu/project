@@ -4,7 +4,7 @@
   --font-ui: "Manrope", "Segoe UI", "Trebuchet MS", sans-serif;
   --font-display: "Cinzel", Georgia, serif;
   --font-script: "Great Vibes", cursive;
-  --bg-photo: url("https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=2200&q=80");
+  --bg-photo: url("https://res.cloudinary.com/dzskuvtfn/image/upload/v1777737480/nagaland_hero_1920x1080_zhqxps.png");
   --auth-bg-photo: url("https://res.cloudinary.com/dzskuvtfn/image/upload/v1777737480/nagaland_hero_1920x1080_zhqxps.png");
   --auth-bg-position: center center;
   --text: #f7fbff;
@@ -207,8 +207,9 @@ fieldset:disabled {
   position: relative;
   isolation: isolate;
   min-height: 100dvh;
-  padding: 28px;
+  padding: 0;
   display: block;
+  overflow: hidden;
 }
 
 .auth-page::before,
@@ -221,15 +222,26 @@ fieldset:disabled {
 
 .auth-page::before {
   z-index: -2;
-  background-image: var(--auth-bg-photo);
-  background-size: cover;
-  background-position: var(--auth-bg-position);
-  background-repeat: no-repeat;
+  background: none;
 }
 
 .auth-page::after {
   z-index: -1;
-  background: linear-gradient(145deg, rgba(0, 0, 0, 0.34), rgba(0, 0, 0, 0.2));
+  background: none;
+}
+
+.auth-bg-slider {
+  position: absolute;
+  inset: -10%;
+  z-index: -2;
+  pointer-events: none;
+  background-image: var(--auth-bg-photo);
+  background-size: 115%;
+  background-position: var(--auth-bg-position);
+  background-repeat: no-repeat;
+  filter: none;
+  transform-origin: center;
+  will-change: transform;
 }
 
 .auth-page > * {
@@ -261,12 +273,12 @@ fieldset:disabled {
 
 .auth-visual {
   position: absolute;
-  top: 0;
-  left: 10px;
-  right: 10px;
-  transform: none;
+  top: 12px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
   overflow: hidden;
-  width: auto;
+  width: min(1180px, calc(100% - 24px));
   border-radius: 24px;
   padding: 14px 22px;
   min-height: 132px;
@@ -400,10 +412,11 @@ fieldset:disabled {
 
 .auth-panel-wrap {
   position: absolute;
-  top: 66%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(520px, calc(100% - 56px));
+  top: 56%;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: min(520px, calc(100% - 32px));
   min-height: auto;
   display: block;
   z-index: 2;

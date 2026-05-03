@@ -1,4 +1,12 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const DEPLOYED_API_URL = "https://project-okdj.onrender.com/api";
+const DEFAULT_LOCAL_API_URL = "http://localhost:5000/api";
+
+const isLocalBrowserHost =
+  typeof window !== "undefined" &&
+  ["localhost", "127.0.0.1"].includes(window.location.hostname);
+
+const DEFAULT_API_URL = isLocalBrowserHost ? DEFAULT_LOCAL_API_URL : DEPLOYED_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || DEFAULT_API_URL;
 
 export async function apiRequest(path, options = {}) {
   const token = localStorage.getItem("nagaland_token");

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { apiRequest } from "./api.js";
 
 const emptyAuth = { phone: "", password: "" };
@@ -1220,10 +1221,51 @@ function App() {
     }
   }
 
+  const authBackgroundMotion = {
+    initial: {
+      scale: 1.16,
+      x: -80,
+      y: -24
+    },
+    animate: {
+      scale: [1.16, 1.12, 1.14, 1.16],
+      x: [-80, 80, 28, -80],
+      y: [-24, -10, 20, -24]
+    },
+    transition: {
+      duration: 24,
+      repeat: Infinity,
+      ease: "easeInOut"
+    }
+  };
+
+  const authTopPanelMotion = {
+    initial: { opacity: 0, y: -180 },
+    animate: { opacity: [0, 1, 1], y: [-180, 14, 0] },
+    transition: {
+      duration: 3.6,
+      times: [0, 0.76, 1],
+      ease: [0.22, 1, 0.36, 1]
+    }
+  };
+
+  const authBottomPanelMotion = {
+    initial: { opacity: 0, y: -140, scale: 0.975 },
+    animate: { opacity: [0, 1, 1], y: [-140, 10, 0], scale: [0.975, 1.01, 1] },
+    transition: {
+      duration: 3.9,
+      delay: 0.24,
+      times: [0, 0.74, 1],
+      ease: [0.22, 1, 0.36, 1]
+    }
+  };
+
   if (!isLoggedIn) {
     return (
       <main className="auth-page">
-        <section className="auth-visual">
+        <motion.div className="auth-bg-slider" {...authBackgroundMotion} />
+
+        <motion.section className="auth-visual" {...authTopPanelMotion}>
           <div className="auth-utility">
             <div className="brand-mark">NT</div>
             <button className="theme-toggle floating" type="button" onClick={toggleTheme}>
@@ -1244,9 +1286,9 @@ function App() {
               <span>Admin controls</span>
             </div>
           </div>
-        </section>
+        </motion.section>
 
-        <section className="auth-panel-wrap">
+        <motion.section className="auth-panel-wrap" {...authBottomPanelMotion}>
           <form className="auth-card form" onSubmit={handleAuth}>
             <div>
               <p className="eyebrow">Welcome</p>
@@ -1323,7 +1365,7 @@ function App() {
             </button>
             {message && <p className="inline-notice">{message}</p>}
           </form>
-        </section>
+        </motion.section>
       </main>
     );
   }

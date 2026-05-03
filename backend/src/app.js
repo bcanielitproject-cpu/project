@@ -10,6 +10,7 @@ import { errorHandler, notFound } from "./middleware/errorHandler.js";
 const app = express();
 const allowedOrigins = [
   process.env.CLIENT_ORIGIN,
+  "https://project-blue-beta-18.vercel.app",
   "http://localhost:5173",
   "http://127.0.0.1:5173",
   "http://localhost:5174",
