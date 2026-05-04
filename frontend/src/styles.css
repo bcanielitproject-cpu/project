@@ -61,12 +61,17 @@ body,
   min-height: 100%;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   color: var(--text);
   font-family: var(--font-ui);
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body::before,
@@ -130,6 +135,18 @@ p {
 
 small {
   color: var(--small);
+}
+
+h1,
+h2,
+h3,
+p,
+small,
+strong,
+span,
+button,
+label {
+  overflow-wrap: anywhere;
 }
 
 img {
@@ -599,9 +616,11 @@ fieldset:disabled {
 
 .app-shell {
   min-height: 100vh;
-  padding: 22px;
+  width: min(100%, 1680px);
+  margin: 0 auto;
+  padding: clamp(14px, 2vw, 22px);
   display: grid;
-  gap: 22px;
+  gap: clamp(14px, 2vw, 22px);
   grid-template-columns: 286px minmax(0, 1fr);
 }
 
@@ -815,12 +834,15 @@ fieldset:disabled {
   min-width: 0;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   flex: 1;
 }
 
 .topbar-search {
-  width: min(560px, 100%);
+  flex: 1 1 320px;
+  width: auto;
+  min-width: min(320px, 100%);
 }
 
 .admin-top-note {
@@ -839,6 +861,7 @@ fieldset:disabled {
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+  min-width: 0;
   justify-content: end;
 }
 
@@ -1513,8 +1536,14 @@ fieldset:disabled {
 .review-form {
   display: grid;
   gap: 10px;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr;
+  align-items: stretch;
+}
+
+.review-form fieldset {
+  grid-template-columns: minmax(84px, 112px) minmax(0, 1fr) auto;
   align-items: center;
+  gap: 10px;
 }
 
 .review-form input {
@@ -1564,7 +1593,7 @@ fieldset:disabled {
   position: relative;
   z-index: 1;
   width: min(920px, 100%);
-  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   overflow: auto;
   border-radius: 20px;
   display: grid;
@@ -1641,7 +1670,12 @@ fieldset:disabled {
   .app-shell,
   .app-shell.sidebar-collapsed,
   .split-layout,
-  .form-grid {
+  .form-grid,
+  .stay-layout,
+  .horizontal-card,
+  .restaurant,
+  .cards,
+  .place-modal {
     grid-template-columns: 1fr;
   }
 
@@ -1725,6 +1759,23 @@ fieldset:disabled {
     align-items: stretch;
   }
 
+  .topbar-left {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .topbar-search {
+    min-width: 0;
+  }
+
+  .topbar-meta {
+    justify-content: flex-start;
+  }
+
+  .dashboard-hero {
+    min-height: 320px;
+  }
+
   .toast {
     width: 100%;
   }
@@ -1780,6 +1831,15 @@ fieldset:disabled {
     grid-template-columns: 1fr;
   }
 
+  .review-form fieldset {
+    grid-template-columns: 1fr;
+  }
+
+  .section-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+
   .itinerary-item {
     grid-template-columns: 1fr;
   }
@@ -1796,6 +1856,35 @@ fieldset:disabled {
 
   .topbar .sidebar-toggle {
     width: auto;
+  }
+}
+
+@media (max-height: 820px) and (min-width: 1021px) {
+  .auth-page {
+    display: grid;
+    align-content: start;
+    gap: 14px;
+    padding: 18px;
+    overflow: auto;
+  }
+
+  .auth-visual {
+    position: static;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: min(1080px, 100%);
+    min-height: 0;
+    margin: 0 auto;
+  }
+
+  .auth-panel-wrap {
+    position: static;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: min(520px, 100%);
+    margin: 0 auto;
   }
 }
 
