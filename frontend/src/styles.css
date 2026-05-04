@@ -235,9 +235,13 @@ fieldset:disabled {
   position: relative;
   isolation: isolate;
   min-height: 100dvh;
-  padding: 0;
-  display: block;
-  overflow: hidden;
+  padding: clamp(12px, 2vw, 20px);
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: clamp(10px, 1.6vw, 16px);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .auth-page::before,
@@ -303,13 +307,13 @@ fieldset:disabled {
 }
 
 .auth-visual {
-  position: absolute;
-  top: 12px;
-  left: 0;
-  right: 0;
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
   margin: 0 auto;
   overflow: hidden;
-  width: min(1180px, calc(100% - 24px));
+  width: min(1180px, 100%);
   border-radius: 24px;
   padding: 14px 22px;
   min-height: 132px;
@@ -442,14 +446,16 @@ fieldset:disabled {
 }
 
 .auth-panel-wrap {
-  position: absolute;
-  top: 56%;
-  left: 0;
-  right: 0;
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
   margin: 0 auto;
-  width: min(520px, calc(100% - 32px));
+  width: min(520px, 100%);
   min-height: auto;
-  display: block;
+  display: grid;
+  place-items: center;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
   z-index: 2;
 }
 
