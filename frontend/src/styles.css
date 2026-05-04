@@ -293,6 +293,9 @@ fieldset:disabled {
 .rank-item,
 .history-item,
 .itinerary-item {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   border: 1px solid var(--stroke);
   background: var(--card);
   box-shadow: 0 26px 58px var(--shadow);
@@ -452,13 +455,12 @@ fieldset:disabled {
 
 .auth-card,
 .pro-panel {
-  width: min(500px, 100%);
   border-radius: 22px;
   padding: clamp(22px, 4vw, 36px);
 }
 
 .auth-card {
-  width: 100%;
+  width: min(500px, 100%);
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-top: 0;
   background: rgba(255, 255, 255, 0.05);
@@ -1299,6 +1301,7 @@ fieldset:disabled {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 18px;
+  align-items: start;
 }
 
 .admin-layout {
@@ -1337,7 +1340,7 @@ fieldset:disabled {
 }
 
 .stay-layout {
-  grid-template-columns: minmax(340px, 0.9fr) minmax(0, 1.1fr);
+  grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.1fr);
   gap: 14px;
   align-items: start;
 }
@@ -1631,6 +1634,16 @@ fieldset:disabled {
 }
 
 @media (max-width: 1200px) {
+  .split-layout,
+  .stay-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .horizontal-card,
+  .restaurant {
+    grid-template-columns: 170px minmax(0, 1fr);
+  }
+
   .cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
