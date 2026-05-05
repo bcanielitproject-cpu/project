@@ -73,6 +73,7 @@ const accurateHotelImages = {
   "mini tourist lodge":
     "https://res.cloudinary.com/dzskuvtfn/image/upload/q_auto/f_auto/v1777707748/1546697499_img_20181125_084150_01.jpeg_pzlk2i.webp"
 };
+const DEFAULT_LIST_PAGE_SIZE = 3;
 
 function normalizeName(value = "") {
   return String(value)
@@ -720,6 +721,78 @@ function buildItineraryId(place) {
 
 function sortByName(records) {
   return [...records].sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+}
+
+function usePaginatedItems(items, resetSignal = "") {
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(items.length / DEFAULT_LIST_PAGE_SIZE));
+  const startIndex = (currentPage - 1) * DEFAULT_LIST_PAGE_SIZE;
+  const paginatedItems = useMemo(
+    () => items.slice(startIndex, startIndex + DEFAULT_LIST_PAGE_SIZE),
+    [items, startIndex]
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [resetSignal]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  function goToPage(page) {
+    setCurrentPage(Math.min(totalPages, Math.max(1, page)));
+  }
+
+  return { currentPage, totalPages, startIndex, paginatedItems, goToPage };
+}
+
+function PaginationControls({ currentPage, totalPages, onPageChange }) {
+  if (totalPages <= 1) return null;
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
+
+  return (
+    <nav className="pagination-controls" aria-label="Pagination controls">
+      <button
+        type="button"
+        className="soft-action pagination-button"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+      >
+        Previous
+      </button>
+      <span className="pagination-status">
+        Page {currentPage} of {totalPages}
+      </span>
+      <div className="pagination-pages" aria-label="Jump to page">
+        {pageNumbers.map((pageNumber) => (
+          <button
+            type="button"
+            key={pageNumber}
+            className={
+              pageNumber === currentPage
+                ? "soft-action pagination-button pagination-page pagination-page-active"
+                : "soft-action pagination-button pagination-page"
+            }
+            onClick={() => onPageChange(pageNumber)}
+            aria-current={pageNumber === currentPage ? "page" : undefined}
+          >
+            {pageNumber}
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        className="soft-action pagination-button"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+      >
+        Next
+      </button>
+    </nav>
+  );
 }
 
 function App() {
@@ -1604,6 +1677,18 @@ function AdminPage({
 }) {
   const sortedHotels = sortByName(hotels);
   const sortedPlaces = sortByName(places);
+  const {
+    currentPage: hotelPage,
+    totalPages: hotelPages,
+    paginatedItems: paginatedHotels,
+    goToPage: goToHotelPage
+  } = usePaginatedItems(sortedHotels, sortedHotels.length);
+  const {
+    currentPage: placePage,
+    totalPages: placePages,
+    paginatedItems: paginatedPlaces,
+    goToPage: goToPlacePage
+  } = usePaginatedItems(sortedPlaces, sortedPlaces.length);
 
   return (
     <div className="admin-layout">
@@ -1759,7 +1844,7 @@ function AdminPage({
           </div>
           <div className="rank-list">
             {sortedHotels.length ? (
-              sortedHotels.map((hotel) => (
+              paginatedHotels.map((hotel) => (
                 <article className="history-item admin-item" key={hotel._id}>
                   <div className="admin-item-content">
                     <img src={getHotelImage(hotel)} alt={hotel.name} />
@@ -1782,6 +1867,11 @@ function AdminPage({
               <p className="muted">No hotels found in the database.</p>
             )}
           </div>
+          <PaginationControls
+            currentPage={hotelPage}
+            totalPages={hotelPages}
+            onPageChange={goToHotelPage}
+          />
         </article>
 
         <article className="top-list-panel admin-list-panel">
@@ -1794,7 +1884,7 @@ function AdminPage({
           </div>
           <div className="rank-list">
             {sortedPlaces.length ? (
-              sortedPlaces.map((place) => (
+              paginatedPlaces.map((place) => (
                 <article className="history-item admin-item" key={place._id}>
                   <div className="admin-item-content">
                     <img src={getPlaceImage(place)} alt={place.name} />
@@ -1817,6 +1907,11 @@ function AdminPage({
               <p className="muted">No places found in the database.</p>
             )}
           </div>
+          <PaginationControls
+            currentPage={placePage}
+            totalPages={placePages}
+            onPageChange={goToPlacePage}
+          />
         </article>
       </section>
     </div>
@@ -1864,6 +1959,12 @@ function Dashboard({
   const itineraryPreview = itinerary.length
     ? itinerary.slice(0, 3)
     : topPlaces.slice(0, 3).map((place, index) => ({ ...place, day: index + 1 }));
+  const {
+    currentPage: itineraryPreviewPage,
+    totalPages: itineraryPreviewPages,
+    paginatedItems: paginatedItineraryPreview,
+    goToPage: goToItineraryPreviewPage
+  } = usePaginatedItems(itineraryPreview, itineraryPreview.length);
   const [plannerTab, setPlannerTab] = useState("stay");
   const plannerTabs = [
     ["stay", "Stay", "stays"],
@@ -1947,11 +2048,11 @@ function Dashboard({
               View all
             </button>
           </div>
-          <div className="places-grid">
+          <div className="places-grid swipe-row swipe-places" aria-label="Swipe must visit places">
             {topPlaces.map((place) => (
               <button
                 type="button"
-                className="place-tile"
+                className="place-tile swipe-card"
                 key={place._id || place.name}
                 onClick={() => onSelectPlace(place)}
               >
@@ -1973,11 +2074,14 @@ function Dashboard({
                 View all
               </button>
             </div>
-            <div className="rank-list">
+            <div className="rank-list swipe-row swipe-restaurants" aria-label="Swipe top restaurants">
               {topRestaurants.map((restaurant) => {
                 const rating = averageRatings[restaurant._id] || "4.5";
                 return (
-                  <article className="rank-item rank-compact" key={restaurant._id || restaurant.name}>
+                  <article
+                    className="rank-item rank-compact swipe-card swipe-restaurant-card"
+                    key={restaurant._id || restaurant.name}
+                  >
                     <img src={restaurant.images?.[0] || fallbackImage} alt={restaurant.name} />
                     <div>
                       <strong>{restaurant.name}</strong>
@@ -1997,10 +2101,10 @@ function Dashboard({
                 View
               </button>
             </div>
-            <div className="rank-list">
-              {itineraryPreview.map((entry, index) => (
+            <div className="rank-list swipe-row swipe-itinerary" aria-label="Swipe itinerary preview">
+              {paginatedItineraryPreview.map((entry, index) => (
                 <article
-                  className="rank-item rank-compact"
+                  className="rank-item rank-compact swipe-card swipe-itinerary-card"
                   key={entry.itineraryId || entry._id || `${entry.name}-${index}`}
                 >
                   <img src={getPlaceImage(entry)} alt={entry.name} />
@@ -2011,6 +2115,11 @@ function Dashboard({
                 </article>
               ))}
             </div>
+            <PaginationControls
+              currentPage={itineraryPreviewPage}
+              totalPages={itineraryPreviewPages}
+              onPageChange={goToItineraryPreviewPage}
+            />
           </article>
         </div>
       </section>
@@ -2060,6 +2169,18 @@ function PlacesPage({
       placeDistrict === "all" || (place.location?.district || "Nagaland") === placeDistrict;
     return matchesQuery && matchesDistrict;
   });
+  const {
+    currentPage: placePage,
+    totalPages: placePages,
+    paginatedItems: paginatedPlaces,
+    goToPage: goToPlacePage
+  } = usePaginatedItems(filteredPlaces, `${placeQuery}|${placeDistrict}|${filteredPlaces.length}`);
+  const {
+    currentPage: routePage,
+    totalPages: routePages,
+    paginatedItems: paginatedRoutes,
+    goToPage: goToRoutePage
+  } = usePaginatedItems(featuredPlaceRoutes, featuredPlaceRoutes.length);
 
   return (
     <>
@@ -2080,18 +2201,23 @@ function PlacesPage({
       <section className="route-strip">
         <p className="eyebrow">Featured routes</p>
         <h2>Popular routes across Nagaland</h2>
-        <div className="route-grid">
-          {featuredPlaceRoutes.map((route) => (
-            <article className="route-card" key={route.id}>
+        <div className="route-grid route-swipe-row" aria-label="Swipe featured routes">
+          {paginatedRoutes.map((route) => (
+            <article className="route-card route-swipe-card" key={route.id}>
               <strong>{route.title}</strong>
               <p>{route.summary}</p>
               <small>{route.stops.join(" -> ")}</small>
             </article>
           ))}
         </div>
+        <PaginationControls
+          currentPage={routePage}
+          totalPages={routePages}
+          onPageChange={goToRoutePage}
+        />
       </section>
       <div className="cards">
-        {filteredPlaces.map((place) => {
+        {paginatedPlaces.map((place) => {
           const saved = wishlist.some((item) => item._id === place._id);
 
           return (
@@ -2120,6 +2246,11 @@ function PlacesPage({
           );
         })}
       </div>
+      <PaginationControls
+        currentPage={placePage}
+        totalPages={placePages}
+        onPageChange={goToPlacePage}
+      />
     </>
   );
 }
@@ -2222,6 +2353,12 @@ function StaysPage({
       bookingChoice: hotel.type === "homestay" ? "homestay-room" : current.bookingChoice
     }));
   }
+  const {
+    currentPage: stayPage,
+    totalPages: stayPages,
+    paginatedItems: paginatedHotels,
+    goToPage: goToStayPage
+  } = usePaginatedItems(filteredHotels, `${stayQuery}|${filteredHotels.length}`);
 
   return (
     <div className="split-layout stay-layout">
@@ -2300,7 +2437,7 @@ function StaysPage({
             placeholder="Search hotels, homestays, district..."
           />
         </div>
-        {filteredHotels.map((hotel) => (
+        {paginatedHotels.map((hotel) => (
           <article
             className={`horizontal-card stay-card ${hotelForm.hotelId === hotel._id ? "selected-card" : ""}`}
             key={hotel._id}
@@ -2325,6 +2462,11 @@ function StaysPage({
             </div>
           </article>
         ))}
+        <PaginationControls
+          currentPage={stayPage}
+          totalPages={stayPages}
+          onPageChange={goToStayPage}
+        />
       </div>
     </div>
   );
@@ -2358,6 +2500,15 @@ function RestaurantsPage({
 
       return a.name.localeCompare(b.name);
     });
+  const {
+    currentPage: restaurantPage,
+    totalPages: restaurantPages,
+    paginatedItems: paginatedRestaurants,
+    goToPage: goToRestaurantPage
+  } = usePaginatedItems(
+    filteredRestaurants,
+    `${restaurantQuery}|${restaurantSort}|${filteredRestaurants.length}`
+  );
 
   return (
     <div className="restaurant-list">
@@ -2377,7 +2528,7 @@ function RestaurantsPage({
           Top restaurants are shown below. Start or seed the backend to enable reviews.
         </p>
       )}
-      {filteredRestaurants.map((restaurant) => {
+      {paginatedRestaurants.map((restaurant) => {
         const form = reviewForms[restaurant._id] || { rating: 5, comment: "" };
         const rating = averageRatings[restaurant._id] || "New";
 
@@ -2446,6 +2597,11 @@ function RestaurantsPage({
           </article>
         );
       })}
+      <PaginationControls
+        currentPage={restaurantPage}
+        totalPages={restaurantPages}
+        onPageChange={goToRestaurantPage}
+      />
     </div>
   );
 }
@@ -2499,6 +2655,12 @@ function SavedPage({ wishlist, onSelectPlace, onBookRide, toggleWishlist, addToI
       </div>
     );
   }
+  const {
+    currentPage: savedPage,
+    totalPages: savedPages,
+    paginatedItems: paginatedWishlist,
+    goToPage: goToSavedPage
+  } = usePaginatedItems(wishlist, wishlist.length);
 
   return (
     <div className="saved-list">
@@ -2509,7 +2671,7 @@ function SavedPage({ wishlist, onSelectPlace, onBookRide, toggleWishlist, addToI
         </div>
       </div>
       <div className="cards">
-        {wishlist.map((place) => (
+        {paginatedWishlist.map((place) => (
           <article className="card saved-card" key={place._id}>
             <button
               type="button"
@@ -2538,6 +2700,11 @@ function SavedPage({ wishlist, onSelectPlace, onBookRide, toggleWishlist, addToI
           </article>
         ))}
       </div>
+      <PaginationControls
+        currentPage={savedPage}
+        totalPages={savedPages}
+        onPageChange={goToSavedPage}
+      />
     </div>
   );
 }
@@ -2546,15 +2713,24 @@ function ItineraryPage({ itinerary, setItinerary, onBookRide }) {
   if (!itinerary.length) {
     return <p className="empty-state">No trip plan yet. Add places from Tourist Places.</p>;
   }
+  const {
+    currentPage: itineraryPage,
+    totalPages: itineraryPages,
+    startIndex: itineraryStartIndex,
+    paginatedItems: paginatedItinerary,
+    goToPage: goToItineraryPage
+  } = usePaginatedItems(itinerary, itinerary.length);
 
   return (
     <div className="itinerary-list">
-      {itinerary.map((place, index) => {
-        const itineraryKey = place.itineraryId || `${place._id || normalizeName(place?.name)}-${index}`;
+      {paginatedItinerary.map((place, index) => {
+        const absoluteIndex = itineraryStartIndex + index;
+        const itineraryKey =
+          place.itineraryId || `${place._id || normalizeName(place?.name)}-${absoluteIndex}`;
 
         return (
           <article className="rank-item itinerary-item" key={itineraryKey}>
-            <span>Day {index + 1}</span>
+            <span>Day {absoluteIndex + 1}</span>
             <img src={getPlaceImage(place)} alt={place.name} />
             <div>
               <h3>{place.name}</h3>
@@ -2566,14 +2742,7 @@ function ItineraryPage({ itinerary, setItinerary, onBookRide }) {
                 <button
                   className="soft-action"
                   onClick={() =>
-                    setItinerary((current) =>
-                      current.filter((item, itemIndex) => {
-                        const itemKey =
-                          item.itineraryId ||
-                          `${item._id || normalizeName(item?.name)}-${itemIndex}`;
-                        return itemKey !== itineraryKey;
-                      })
-                    )
+                    setItinerary((current) => current.filter((_, itemIndex) => itemIndex !== absoluteIndex))
                   }
                 >
                   Remove
@@ -2583,11 +2752,31 @@ function ItineraryPage({ itinerary, setItinerary, onBookRide }) {
           </article>
         );
       })}
+      <PaginationControls
+        currentPage={itineraryPage}
+        totalPages={itineraryPages}
+        onPageChange={goToItineraryPage}
+      />
     </div>
   );
 }
 
 function BookingHistoryPage({ bookingHistory, cancelTaxiBooking, cancelStayBooking }) {
+  const {
+    currentPage: taxiPage,
+    totalPages: taxiPages,
+    startIndex: taxiStartIndex,
+    paginatedItems: paginatedTaxiBookings,
+    goToPage: goToTaxiPage
+  } = usePaginatedItems(bookingHistory.taxis, bookingHistory.taxis.length);
+  const {
+    currentPage: stayPage,
+    totalPages: stayPages,
+    startIndex: stayStartIndex,
+    paginatedItems: paginatedStayBookings,
+    goToPage: goToStayPage
+  } = usePaginatedItems(bookingHistory.stays, bookingHistory.stays.length);
+
   return (
     <div className="split-layout">
       <section className="top-list-panel">
@@ -2599,9 +2788,9 @@ function BookingHistoryPage({ bookingHistory, cancelTaxiBooking, cancelStayBooki
         </div>
         <div className="rank-list">
           {bookingHistory.taxis.length ? (
-            bookingHistory.taxis.map((booking, index) => (
+            paginatedTaxiBookings.map((booking, index) => (
               <article className="history-item" key={booking._id}>
-                <strong>{index + 1}. {booking.bookingChoice}</strong>
+                <strong>{taxiStartIndex + index + 1}. {booking.bookingChoice}</strong>
                 <p>{booking.pickup} -&gt; {booking.drop}</p>
                 <small>{booking.date?.slice(0, 10)} at {booking.time} - COD - valid till {formatTime(booking.expiresAt)}</small>
                 <div className="mini-actions">
@@ -2619,6 +2808,11 @@ function BookingHistoryPage({ bookingHistory, cancelTaxiBooking, cancelStayBooki
             <p className="muted">No taxi bookings yet.</p>
           )}
         </div>
+        <PaginationControls
+          currentPage={taxiPage}
+          totalPages={taxiPages}
+          onPageChange={goToTaxiPage}
+        />
       </section>
 
       <section className="top-list-panel">
@@ -2630,9 +2824,9 @@ function BookingHistoryPage({ bookingHistory, cancelTaxiBooking, cancelStayBooki
         </div>
         <div className="rank-list">
           {bookingHistory.stays.length ? (
-            bookingHistory.stays.map((booking, index) => (
+            paginatedStayBookings.map((booking, index) => (
               <article className="history-item" key={booking._id}>
-                <strong>{index + 1}. {booking.hotelId?.name || "Selected stay"}</strong>
+                <strong>{stayStartIndex + index + 1}. {booking.hotelId?.name || "Selected stay"}</strong>
                 <p>{booking.bookingChoice}</p>
                 <small>{booking.checkIn?.slice(0, 10)} -&gt; {booking.checkOut?.slice(0, 10)} - COD - valid till {formatTime(booking.expiresAt)}</small>
                 <div className="mini-actions">
@@ -2650,6 +2844,11 @@ function BookingHistoryPage({ bookingHistory, cancelTaxiBooking, cancelStayBooki
             <p className="muted">No hotel or homestay bookings yet.</p>
           )}
         </div>
+        <PaginationControls
+          currentPage={stayPage}
+          totalPages={stayPages}
+          onPageChange={goToStayPage}
+        />
       </section>
     </div>
   );

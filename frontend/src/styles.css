@@ -1065,6 +1065,69 @@ fieldset:disabled {
   font-size: 0.76rem;
 }
 
+.swipe-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  padding-bottom: 6px;
+}
+
+.swipe-row::-webkit-scrollbar {
+  height: 7px;
+}
+
+.swipe-row::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.swipe-card {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+.swipe-places .swipe-card {
+  width: min(240px, 70vw);
+}
+
+.swipe-restaurants .swipe-card {
+  width: min(360px, 86vw);
+}
+
+.swipe-itinerary .swipe-card {
+  width: min(340px, 86vw);
+}
+
+.route-grid.route-swipe-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  padding-bottom: 6px;
+}
+
+.route-grid.route-swipe-row::-webkit-scrollbar {
+  height: 7px;
+}
+
+.route-grid.route-swipe-row::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.route-swipe-card {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  width: min(360px, 88vw);
+}
+
 .dashboard-side-stack {
   display: grid;
   gap: 14px;
@@ -1568,6 +1631,49 @@ fieldset:disabled {
 .saved-list {
   display: grid;
   gap: 14px;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.pagination-button {
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.pagination-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pagination-status {
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pagination-page {
+  min-width: 38px;
+  padding: 0 10px;
+}
+
+.pagination-page-active {
+  border-color: rgba(88, 192, 186, 0.62);
+  background: linear-gradient(125deg, rgba(88, 192, 186, 0.26), rgba(241, 154, 93, 0.2));
+  color: #fff;
 }
 
 .saved-empty {
