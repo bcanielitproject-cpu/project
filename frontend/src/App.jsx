@@ -2048,11 +2048,11 @@ function Dashboard({
               View all
             </button>
           </div>
-          <div className="places-grid swipe-row swipe-places" aria-label="Swipe must visit places">
+          <div className="places-grid">
             {topPlaces.map((place) => (
               <button
                 type="button"
-                className="place-tile swipe-card"
+                className="place-tile"
                 key={place._id || place.name}
                 onClick={() => onSelectPlace(place)}
               >
@@ -2074,12 +2074,12 @@ function Dashboard({
                 View all
               </button>
             </div>
-            <div className="rank-list swipe-row swipe-restaurants" aria-label="Swipe top restaurants">
+            <div className="rank-list">
               {topRestaurants.map((restaurant) => {
                 const rating = averageRatings[restaurant._id] || "4.5";
                 return (
                   <article
-                    className="rank-item rank-compact swipe-card swipe-restaurant-card"
+                    className="rank-item rank-compact"
                     key={restaurant._id || restaurant.name}
                   >
                     <img src={restaurant.images?.[0] || fallbackImage} alt={restaurant.name} />
@@ -2101,10 +2101,10 @@ function Dashboard({
                 View
               </button>
             </div>
-            <div className="rank-list swipe-row swipe-itinerary" aria-label="Swipe itinerary preview">
+            <div className="rank-list">
               {paginatedItineraryPreview.map((entry, index) => (
                 <article
-                  className="rank-item rank-compact swipe-card swipe-itinerary-card"
+                  className="rank-item rank-compact"
                   key={entry.itineraryId || entry._id || `${entry.name}-${index}`}
                 >
                   <img src={getPlaceImage(entry)} alt={entry.name} />
@@ -2175,12 +2175,6 @@ function PlacesPage({
     paginatedItems: paginatedPlaces,
     goToPage: goToPlacePage
   } = usePaginatedItems(filteredPlaces, `${placeQuery}|${placeDistrict}|${filteredPlaces.length}`);
-  const {
-    currentPage: routePage,
-    totalPages: routePages,
-    paginatedItems: paginatedRoutes,
-    goToPage: goToRoutePage
-  } = usePaginatedItems(featuredPlaceRoutes, featuredPlaceRoutes.length);
 
   return (
     <>
@@ -2202,7 +2196,7 @@ function PlacesPage({
         <p className="eyebrow">Featured routes</p>
         <h2>Popular routes across Nagaland</h2>
         <div className="route-grid route-swipe-row" aria-label="Swipe featured routes">
-          {paginatedRoutes.map((route) => (
+          {featuredPlaceRoutes.map((route) => (
             <article className="route-card route-swipe-card" key={route.id}>
               <strong>{route.title}</strong>
               <p>{route.summary}</p>
@@ -2210,11 +2204,6 @@ function PlacesPage({
             </article>
           ))}
         </div>
-        <PaginationControls
-          currentPage={routePage}
-          totalPages={routePages}
-          onPageChange={goToRoutePage}
-        />
       </section>
       <div className="cards">
         {paginatedPlaces.map((place) => {
